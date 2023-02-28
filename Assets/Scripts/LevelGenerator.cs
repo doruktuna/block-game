@@ -43,9 +43,6 @@ public class LevelGenerator : MonoBehaviour
 
     List<BlockObject> oldBlockObjects;
 
-    BlockObject maxSizeBlock;
-    float maxBlockSize;
-
     float blockFallingMinY;
     float blockFallingMaxY;
 
@@ -171,6 +168,7 @@ public class LevelGenerator : MonoBehaviour
         print(String.Format("Generated in {0:0.00} seconds", genTime));
 
         CreateBlockObjects();
+        AssignSelectedColorsToBlocks(Util.ColorsForBlocks);
         NotifyLevelFinishedChecker();
 
         yield return null;
@@ -365,51 +363,6 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    private void UpdateMaxBlockIfBigger(BlockObject block)
-    {
-        float blockSize = CalculateBlockSize(block);
-        if (blockSize > maxBlockSize)
-        {
-            maxBlockSize = blockSize;
-            maxSizeBlock = block;
-        }
-    }
-
-    private BlockObject SelectRandomBlockExcludingMax()
-    {
-        BlockObject block = null;
-        do
-        {
-            int index = Random.Range(0, blockObjects.Count);
-            block = blockObjects[index];
-        } while (block == maxSizeBlock);
-
-        return block;
-    }
-
-    private BlockObject SelectSmallestBlock(HashSet<BlockObject> candidates)
-    {
-        float minSize = float.MaxValue;
-        BlockObject minAreaBlock = null;
-
-        foreach (BlockObject block in candidates)
-        {
-            float blockSize = CalculateBlockSize(block);
-            if (blockSize < minSize)
-            {
-                minSize = blockSize;
-                minAreaBlock = block;
-            }
-        }
-
-        return minAreaBlock;
-    }
-
-    private float CalculateBlockSize(BlockObject block)
-    {
-        return block.GetBounds().size.sqrMagnitude;
-    }
-
     private void UpdateRandomSeed(int seed)
     {
         if (seed == 0)
@@ -426,102 +379,12 @@ public class LevelGenerator : MonoBehaviour
     private void AssignSelectedColorsToBlocks(List<Color> colors)
     {
         int ind = Random.Range(0, colors.Count - 1);
-        foreach (BlockObject block in blockObjects)
+        foreach (BlockObject blockObject in blockObjects)
         {
-            block.BlockColor = colors[ind];
+            blockObject.BlockColor = colors[ind];
             ind = (ind + 1) % colors.Count;
         }
     }
-
-    // private void AssignNeighboursOfBlocks()
-    // {
-    //     // TODO: Not efficient for checking neighbours, but not a big deal
-    //     foreach (BlockObject block in blocks)
-    //     {
-    //         foreach (BlockObject neighbour in blocks)
-    //         {
-    //             if (block == neighbour) { continue; }
-    //             if (block.IsNeighbourTo(neighbour))
-    //             {
-    //                 block.AddNeighbour(neighbour);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // private void BreakSquaresIntoTriangles()
-    // {
-    //     List<BlockObject> squaresToDestroy = new List<BlockObject>();
-    //     List<BlockObject> newTriangles = new List<BlockObject>();
-
-    //     foreach (BlockObject block in blocks)
-    //     {
-    //         if (block.Corners.Count != 4) { continue; }
-    //         if (Random.Range(0f, 1f) > triangleBreakProbability) { continue; }
-
-    //         Vector3 pos1 = block.transform.position;
-    //         Vector3 pos2;
-    //         Vector2Int placeOnGrid1 = block.placeOnGrid;
-    //         Vector2Int placeOnGrid2;
-    //         List<Vector2Int> corners1 = CopyVectorList(block.Corners);
-    //         List<Vector2Int> corners2 = CopyVectorList(block.Corners);
-
-    //         // Top-left to bottom right diagonal
-    //         if (Random.Range(0f, 1f) < 0.5f)
-    //         {
-    //             corners1.RemoveAt(2);
-    //             corners2.RemoveAt(0);
-    //             corners2 = ResetOriginForCorners(corners2);
-    //             pos2 = block.CornersInWorldSpace[1];
-    //             placeOnGrid2 = block.placeOnGrid + block.Corners[1];
-    //         }
-    //         // Top-right to bottom left diagonal
-    //         else
-    //         {
-    //             corners1.RemoveAt(3);
-    //             corners2.RemoveAt(1);
-    //             pos2 = block.transform.position;
-    //             placeOnGrid2 = block.placeOnGrid;
-    //         }
-    //         BlockObject triangle1 = Instantiate(blockPrefab, pos1, Quaternion.identity, this.transform);
-    //         BlockObject triangle2 = Instantiate(blockPrefab, pos2, Quaternion.identity, this.transform);
-
-    //         triangle1.placeOnGrid = placeOnGrid1;
-    //         triangle2.placeOnGrid = placeOnGrid2;
-
-    //         triangle1.SetCorners(corners1);
-    //         triangle2.SetCorners(corners2);
-
-    //         triangle1.BlockColor = GetRandomColor();
-    //         triangle2.BlockColor = GetRandomColor();
-
-    //         triangle1.GenerateShapeAndCollider();
-    //         triangle2.GenerateShapeAndCollider();
-
-    //         triangle1.name = String.Format("Tri 1 from: {0}", block.name);
-    //         triangle2.name = String.Format("Tri 2 from: {0}", block.name);
-
-    //         triangle1.AddNeighbour(triangle2);
-    //         triangle2.AddNeighbour(triangle1);
-    //         triangle1.CheckAndAddNewNeighbours(block.Neighbours);
-    //         triangle2.CheckAndAddNewNeighbours(block.Neighbours);
-
-    //         newTriangles.Add(triangle1);
-    //         newTriangles.Add(triangle2);
-    //         squaresToDestroy.Add(block);
-    //     }
-
-    //     foreach (BlockObject block in newTriangles)
-    //     {
-    //         blocks.Add(block);
-    //     }
-
-    //     foreach (BlockObject block in squaresToDestroy)
-    //     {
-    //         EraseFromNeighboursList(block);
-    //         RemoveAndDestroy(block);
-    //     }
-    // }
 
     // TODO: Use generic type instead of Block
     private BlockObject SelectRandomFromSet(HashSet<BlockObject> neighbours)
@@ -535,49 +398,12 @@ public class LevelGenerator : MonoBehaviour
         return null;
     }
 
-    // private void EraseFromNeighboursList(BlockObject removal)
-    // {
-    //     foreach (BlockObject block in blocks)
-    //     {
-    //         block.RemoveNeighbour(removal);
-    //     }
-    // }
+
 
     private void RemoveAndDestroy(BlockObject block)
     {
         blockObjects.Remove(block);
         Destroy(block.gameObject);
-    }
-
-    private List<Vector2Int> ResetOriginForCorners(List<Vector2Int> corners)
-    {
-        List<Vector2Int> newCorners = new List<Vector2Int>();
-
-        Vector2Int leftBottom = corners[0];
-        foreach (Vector2Int corner in corners)
-        {
-            if (corner.IsMoreLeftBottomThan(leftBottom))
-            {
-                leftBottom = corner;
-            }
-        }
-
-        foreach (Vector2Int corner in corners)
-        {
-            newCorners.Add(corner - leftBottom);
-        }
-        return newCorners;
-    }
-
-    private List<T> CopyVectorList<T>(List<T> original)
-    {
-        List<T> newList = new List<T>();
-        foreach (T el in original)
-        {
-            newList.Add(el);
-        }
-
-        return newList;
     }
 
     private Color GetRandomColor()

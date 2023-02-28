@@ -48,6 +48,23 @@ public class Block
         }
     }
 
+    public int EncapsulatingRectangleSize()
+    {
+        Vector2Int bottomLeft = new Vector2Int(corners[0].x, corners[0].y);
+        Vector2Int topRight = new Vector2Int(corners[0].x, corners[0].y);
+
+        foreach (Vector2Int corner in corners)
+        {
+            if (corner.x < bottomLeft.x) { bottomLeft.x = corner.x; }
+            if (corner.y < bottomLeft.y) { bottomLeft.y = corner.y; }
+            if (corner.x > topRight.x) { topRight.x = corner.x; }
+            if (corner.y > topRight.y) { topRight.y = corner.y; }
+        }
+
+        Vector2Int diff = topRight - bottomLeft;
+        return diff.x * diff.y;
+    }
+
     public void GenerateSquareBlock(int size = 1)
     {
         corners = new List<Vector2Int>();

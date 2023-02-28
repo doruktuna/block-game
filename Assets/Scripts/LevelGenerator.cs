@@ -276,12 +276,6 @@ public class LevelGenerator : MonoBehaviour
         this.seed = seed;
     }
 
-    private void RemoveAndDestroy(BlockObject block)
-    {
-        blockObjects.Remove(block);
-        Destroy(block.gameObject);
-    }
-
     private void MakePiecesFall()
     {
         Vector3 origin = grid.transform.position;

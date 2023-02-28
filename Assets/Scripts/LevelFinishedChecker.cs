@@ -28,7 +28,7 @@ public class LevelFinishedChecker : MonoBehaviour
     {
         if (UIFinishedTexts.activeInHierarchy && Input.GetMouseButtonDown(0))
         {
-            levelGenerator.PresentPieces();
+            levelGenerator.GenerateLevel();
             UIFinishedTexts.SetActive(false);
         }
     }
@@ -76,7 +76,6 @@ public class LevelFinishedChecker : MonoBehaviour
             {
                 print("Congrats mate, you have done it");
                 UIFinishedTexts.SetActive(true);
-                levelGenerator.Generate();
             }
             else
             {

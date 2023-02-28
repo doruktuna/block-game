@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static PuzzleGenerator;
 using Random = UnityEngine.Random;
 
 public class LevelGenerator : MonoBehaviour
@@ -41,21 +42,16 @@ public class LevelGenerator : MonoBehaviour
     List<BlockObject> blockObjects;
     public List<BlockObject> BlockObjects { get { return blockObjects; } }
 
-    List<BlockObject> oldBlockObjects;
-
     float blockFallingMinY;
     float blockFallingMaxY;
 
     bool demoMode = false;
-    IEnumerator demoEnumerator = null;
-    bool demoFinished = false;
     bool demoPlayContinously = false;
+    bool isAtEndOfDemo = false;
 
     void Awake()
     {
         ReadSettings();
-        puzzleGenerator = new PuzzleGenerator(gridSize, triangleBreakProbability, seed);
-        blockObjects = new List<BlockObject>();
     }
 
     void Start()
@@ -63,21 +59,23 @@ public class LevelGenerator : MonoBehaviour
         AssignBlockFallingYRange();
         AssignGrid();
 
+        puzzleGenerator = new PuzzleGenerator(gridSize, triangleBreakProbability, seed);
+        blockObjects = new List<BlockObject>();
+
         levelFinishedChecker = FindObjectOfType<LevelFinishedChecker>();
-        DeleteOldBlocks();
 
         demoMode = !grid.CompareTag(Util.Tags.gridForGeneration);
-        StartLevelGeneration();
+        GenerateLevel();
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
-            StartCoroutine(GenerateAndPresentPieces());
+            GenerateLevel();
         }
 
-        if (Input.GetKeyDown(KeyCode.N) && demoEnumerator != null)
+        if (Input.GetKeyDown(KeyCode.N))
         {
             ProceedOneStepInDemo();
         }
@@ -120,63 +118,31 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    private void StartLevelGeneration()
+    public void GenerateLevel()
     {
-        // TODO: Enable demo mode
+        DeleteBlockObjects();
+
         if (demoMode)
         {
-            // demoEnumerator = GenerateLevelDemo();
-            demoEnumerator.MoveNext();
-            demoFinished = false;
+            isAtEndOfDemo = false;
+            textDemo.text = "Welcome to level generation demo. You can use the buttons below buttons to proceed";
         }
-        else
-        {
-            StartCoroutine(GenerateAndPresentPieces());
-        }
-    }
 
-    public void Generate(int seed = 0)
-    {
-        StartCoroutine(GenerateLevel(seed));
-    }
-
-    private IEnumerator GenerateAndPresentPieces(int seed = 0)
-    {
-        yield return StartCoroutine(GenerateLevel(seed));
-        PresentPieces();
-    }
-
-    public void PresentPieces()
-    {
-        DeleteOldBlocks();
-        if (grid.CompareTag(Util.Tags.gridForGeneration))
-        {
-            MakePiecesFall();
-        }
-    }
-
-    private IEnumerator GenerateLevel(int seed = 0)
-    {
-        float genStartTime = Time.fixedTime;
-        gridSize = grid.GridBoardSize;
-
-        print("Generating level");
         numPieces = Random.Range(minPieces, maxPieces);
-        puzzleGenerator.GenerateLevel(numPieces);
+        puzzleGenerator.GenerateLevel(numPieces, demoMode);
 
-        float genTime = Time.fixedTime - genStartTime;
-        print(String.Format("Generated in {0:0.00} seconds", genTime));
+        if (demoMode) { return; }
 
         CreateBlockObjects();
-        AssignSelectedColorsToBlocks(Util.ColorsForBlocks);
+        PresentPieces();
         NotifyLevelFinishedChecker();
-
-        yield return null;
     }
 
     private void CreateBlockObjects()
     {
-        DeleteAllBlocks();
+        DeleteBlockObjects();
+
+        int count = 1;
         foreach (Block block in puzzleGenerator.Blocks)
         {
             Vector2 position = grid.transform.position;
@@ -184,6 +150,7 @@ public class LevelGenerator : MonoBehaviour
 
             BlockObject blockObject = Instantiate(blockObjectPrefab, this.transform);
             blockObject.transform.position = position;
+            blockObject.name = String.Format("Block {0} ({1})", count++, block.placeOnGrid);
 
             blockObject.block = block;
             blockObject.GenerateShapeAndCollider();
@@ -192,85 +159,13 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-
-    // Almost the same as GenerateLevel but with yield returns 
-    // so that it can be traced step by step
-    // private IEnumerator GenerateLevelDemo(int seed = 0)
-    // {
-    //     float genStartTime = Time.fixedTime;
-    //     gridSize = grid.GridBoardSize;
-
-    //     oldBlocks = blocks;
-    //     blocks = new List<BlockObject>();
-
-    //     textDemo.text = "Welcome to level generation demo. You can use the buttons below buttons to proceed";
-    //     yield return null;
-
-    //     UpdateRandomSeed(seed);
-
-    //     textDemo.text = "Generating square blocks";
-    //     yield return null;
-
-    //     GenerateSquareBlocks();
-    //     textDemo.text = blocks.Count + " squares generated. Neighbour lists will be updated.";
-    //     yield return null;
-
-    //     AssignNeighboursOfBlocks();
-
-    //     textDemo.text = "Randomly breaking some of the squares into triangles. Break probability: " + triangleBreakProbability;
-    //     yield return null;
-
-    //     BreakSquaresIntoTriangles();
-    //     print("Total number of blocks: " + blocks.Count);
-
-    //     // TODO: Carry block size calculation to block
-
-    //     maxSizeBlock = blocks[0];
-    //     maxBlockSize = CalculateBlockSize(blocks[0]);
-    //     numPieces = Random.Range(minPieces, maxPieces);
-
-    //     textDemo.text = "Randomly merging blocks to reduce the number of blocks to " + numPieces;
-    //     yield return null;
-
-    //     EnableRedDots();
-    //     while (blocks.Count > numPieces)
-    //     {
-    //         BlockObject block = SelectRandomBlockExcludingMax();
-    //         BlockObject toBeMerged = SelectSmallestBlock(block.Neighbours);
-    //         textDemo.text = String.Format("Block at {0} is going to merge with block at {1}", block.placeOnGrid, toBeMerged.placeOnGrid);
-    //         UpdateRedDotPositions(block.transform.position, toBeMerged.transform.position);
-    //         yield return null;
-
-    //         block.MergeWith(toBeMerged);
-
-    //         // TODO: Try to get rid of this, I use this because I use bounds of colliders
-    //         yield return new WaitForFixedUpdate();
-
-    //         UpdateMaxBlockIfBigger(block);
-
-    //         block.CheckAndAddNewNeighbours(toBeMerged.Neighbours);
-    //         EraseFromNeighboursList(toBeMerged);
-
-    //         Vector2 toBeMergedPlace = toBeMerged.placeOnGrid;
-    //         RemoveAndDestroy(toBeMerged);
-
-    //         block.name = "Merged block: " + block.placeOnGrid;
-    //     }
-    //     DisableRedDots();
-    //     textDemo.text = String.Format("Assigning pre defined pastel colors to blocks");
-    //     yield return null;
-
-    //     AssignSelectedColorsToBlocks(Util.ColorsForBlocks);
-
-    //     float genTime = Time.fixedTime - genStartTime;
-
-    //     textDemo.text = String.Format("Level creation finished. Proceed one more step to start a new level generation.");
-    //     demoFinished = true;
-    //     demoPlayContinously = false;
-    //     TMP_Text buttonText = buttonPlayPauseButton.GetComponentInChildren<TMP_Text>();
-    //     buttonText.text = "Play";
-    //     yield break;
-    // }
+    public void PresentPieces()
+    {
+        if (grid.CompareTag(Util.Tags.gridForGeneration))
+        {
+            MakePiecesFall();
+        }
+    }
 
     private void EnableRedDots()
     {
@@ -294,20 +189,39 @@ public class LevelGenerator : MonoBehaviour
 
     private void ProceedOneStepInDemo()
     {
-        if (!demoFinished)
+        if (!puzzleGenerator.IsGenerationFinished)
         {
-            demoEnumerator.MoveNext();
+            puzzleGenerator.ProceedToNextStep();
+            DemoInfo demoInfo = puzzleGenerator.demoInfo;
+
+            CreateBlockObjects();
+
+            if (!demoInfo.isMergingStage)
+            {
+                textDemo.text = puzzleGenerator.demoInfo.message;
+                DisableRedDots();
+            }
+            else
+            {
+                EnableRedDots();
+                BlockObject blockObject1 = blockObjects[demoInfo.merge1Ind];
+                BlockObject blockObject2 = blockObjects[demoInfo.merge2Ind];
+
+                textDemo.text = String.Format("Merging {0} with {1}", blockObject1.name, blockObject2.name);
+                UpdateRedDotPositions(blockObject1.CenterPosition, blockObject2.CenterPosition);
+            }
         }
-        else
+        else if (!isAtEndOfDemo)
         {
-            DeleteAllBlocks();
-            // TODO: Demo code, check here
-            // demoEnumerator = GenerateLevelDemo();
-            demoEnumerator.MoveNext();
-            demoFinished = false;
             demoPlayContinously = false;
             TMP_Text buttonText = buttonPlayPauseButton.GetComponentInChildren<TMP_Text>();
             buttonText.text = "Play";
+            isAtEndOfDemo = true;
+        }
+        else
+        {
+            DeleteBlockObjects();
+            GenerateLevel();
         }
     }
 
@@ -328,7 +242,7 @@ public class LevelGenerator : MonoBehaviour
 
     private IEnumerator MoveToNextStepRegularly()
     {
-        while (!demoFinished && demoPlayContinously)
+        while (!isAtEndOfDemo && demoPlayContinously)
         {
             ProceedOneStepInDemo();
             yield return new WaitForSeconds(stepTimeForDemo);
@@ -340,27 +254,13 @@ public class LevelGenerator : MonoBehaviour
         ProceedOneStepInDemo();
     }
 
-
-    private void DeleteAllBlocks()
+    private void DeleteBlockObjects()
     {
-        DeleteOldBlocks();
         foreach (BlockObject block in blockObjects)
         {
             Destroy(block.gameObject);
         }
         blockObjects = new List<BlockObject>();
-    }
-
-    private void DeleteOldBlocks()
-    {
-        if (oldBlockObjects != null)
-        {
-            foreach (BlockObject block in oldBlockObjects)
-            {
-                Destroy(block.gameObject);
-            }
-            oldBlockObjects = new List<BlockObject>();
-        }
     }
 
     private void UpdateRandomSeed(int seed)
@@ -376,42 +276,10 @@ public class LevelGenerator : MonoBehaviour
         this.seed = seed;
     }
 
-    private void AssignSelectedColorsToBlocks(List<Color> colors)
-    {
-        int ind = Random.Range(0, colors.Count - 1);
-        foreach (BlockObject blockObject in blockObjects)
-        {
-            blockObject.BlockColor = colors[ind];
-            ind = (ind + 1) % colors.Count;
-        }
-    }
-
-    // TODO: Use generic type instead of Block
-    private BlockObject SelectRandomFromSet(HashSet<BlockObject> neighbours)
-    {
-        int ind = Random.Range(1, neighbours.Count);
-        foreach (BlockObject block in neighbours)
-        {
-            ind--;
-            if (ind == 0) { return block; }
-        }
-        return null;
-    }
-
-
-
     private void RemoveAndDestroy(BlockObject block)
     {
         blockObjects.Remove(block);
         Destroy(block.gameObject);
-    }
-
-    private Color GetRandomColor()
-    {
-        float r = Random.Range(0f, 1f);
-        float g = Random.Range(0f, 1f);
-        float b = Random.Range(0f, 1f);
-        return new Color(r, g, b);
     }
 
     private void MakePiecesFall()

@@ -16,6 +16,19 @@ public class PuzzleGenerator
     Block maxSizeBlock;
     float maxBlockSize;
 
+    IEnumerator generatorEnumerator;
+    bool isGenerationFinished = false;
+    public bool IsGenerationFinished { get { return isGenerationFinished; } }
+
+    public struct DemoInfo
+    {
+        public string message;
+        public bool isMergingStage;
+        public int merge1Ind;
+        public int merge2Ind;
+    }
+    public DemoInfo demoInfo;
+
     public PuzzleGenerator(int gridSize, float triangleBreakProbability, int seed = 0)
     {
         this.gridSize = gridSize;
@@ -35,21 +48,58 @@ public class PuzzleGenerator
         this.seed = seed;
     }
 
-    public void GenerateLevel(int numPieces)
+    public void GenerateLevel(int numPieces, bool demoMode = false)
+    {
+        generatorEnumerator = GenerateLevelEnumerator(numPieces);
+        isGenerationFinished = false;
+
+        if (!demoMode)
+        {
+            while (!isGenerationFinished)
+            {
+                ProceedToNextStep();
+            }
+        }
+    }
+
+    public void ProceedToNextStep()
+    {
+        generatorEnumerator.MoveNext();
+    }
+
+    private IEnumerator GenerateLevelEnumerator(int numPieces)
     {
         blocks = new List<Block>();
 
+        demoInfo.isMergingStage = false;
+        demoInfo.message = "Generating square blocks";
+        yield return null;
         GenerateSquareBlocks();
+        demoInfo.message = blocks.Count + " squares generated. Neighbour lists will be updated.";
+        yield return null;
+
         AssignNeighboursOfBlocks();
+
+        demoInfo.message = "Randomly breaking some of the squares into triangles. Break probability: " + triangleBreakProbability;
+        yield return null;
         BreakSquaresIntoTriangles();
 
         maxSizeBlock = blocks[0];
         maxBlockSize = blocks[0].EncapsulatingRectangleSize();
 
+        demoInfo.message = "Randomly merging blocks to reduce the number of blocks to " + numPieces;
+        yield return null;
+        demoInfo.isMergingStage = true;
         while (blocks.Count > numPieces)
         {
             Block block = SelectRandomBlockExcludingMax();
             Block toBeMerged = SelectSmallestBlock(block.Neighbours);
+
+            demoInfo.merge1Ind = blocks.IndexOf(block);
+            demoInfo.merge2Ind = blocks.IndexOf(toBeMerged);
+            demoInfo.message = String.Format("Block at {0} is going to merge with block at {1}", block.placeOnGrid, toBeMerged.placeOnGrid);
+            yield return null;
+
             block.MergeWith(toBeMerged);
 
             UpdateMaxBlockIfBigger(block);
@@ -58,6 +108,15 @@ public class PuzzleGenerator
             EraseFromNeighboursList(toBeMerged);
             blocks.Remove(toBeMerged);
         }
+        demoInfo.isMergingStage = false;
+        demoInfo.message = String.Format("Assigning pre defined pastel colors to blocks");
+        yield return null;
+
+        AssignSelectedColorsToBlocks(Util.ColorsForBlocks);
+
+        demoInfo.message = "Level generation completed.";
+        isGenerationFinished = true;
+        yield return null;
     }
 
     private void GenerateSquareBlocks()
@@ -151,7 +210,6 @@ public class PuzzleGenerator
         }
     }
 
-
     private void UpdateMaxBlockIfBigger(Block block)
     {
         float blockSize = block.EncapsulatingRectangleSize();
@@ -220,7 +278,17 @@ public class PuzzleGenerator
         }
     }
 
-    public static Color GetRandomColor()
+    private void AssignSelectedColorsToBlocks(List<Color> colors)
+    {
+        int ind = Random.Range(0, colors.Count - 1);
+        foreach (Block block in blocks)
+        {
+            block.blockColor = colors[ind];
+            ind = (ind + 1) % colors.Count;
+        }
+    }
+
+    private static Color GetRandomColor()
     {
         float r = Random.Range(0f, 1f);
         float g = Random.Range(0f, 1f);

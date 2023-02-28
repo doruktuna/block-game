@@ -31,6 +31,21 @@ public class BlockObject : MonoBehaviour
     float fallSpeed;
     float fallStopY;
 
+    public Vector3 CenterPosition
+    {
+        get
+        {
+            Vector2 center = Vector2.zero;
+            foreach (Vector2 corner in polygonCollider.points)
+            {
+                center += corner;
+            }
+            center /= polygonCollider.points.Length;
+
+            return transform.position + new Vector3(center.x, center.y, 0);
+        }
+    }
+
     void Start()
     {
         GetComponent<MeshRenderer>().material = new Material(shader);

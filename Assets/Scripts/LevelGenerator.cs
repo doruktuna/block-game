@@ -456,7 +456,7 @@ public class LevelGenerator : MonoBehaviour
                 newBlock.BlockColor = GetRandomColor();
                 newBlock.GenerateSquareBlock();
                 newBlock.GenerateShapeAndCollider();
-                newBlock.placeOnGrid = new Vector2(i, j);
+                newBlock.placeOnGrid = new Vector2Int(i, j);
                 newBlock.name = String.Format("Square: {0}, {1}", i, j);
                 blocks.Add(newBlock);
             }
@@ -509,10 +509,10 @@ public class LevelGenerator : MonoBehaviour
 
             Vector3 pos1 = block.transform.position;
             Vector3 pos2;
-            Vector2 placeOnGrid1 = block.placeOnGrid;
-            Vector2 placeOnGrid2;
-            List<Vector2> corners1 = CopyVectorList(block.Corners);
-            List<Vector2> corners2 = CopyVectorList(block.Corners);
+            Vector2Int placeOnGrid1 = block.placeOnGrid;
+            Vector2Int placeOnGrid2;
+            List<Vector2Int> corners1 = CopyVectorList(block.Corners);
+            List<Vector2Int> corners2 = CopyVectorList(block.Corners);
 
             // Top-left to bottom right diagonal
             if (Random.Range(0f, 1f) < 0.5f)
@@ -597,12 +597,12 @@ public class LevelGenerator : MonoBehaviour
         Destroy(block.gameObject);
     }
 
-    private List<Vector2> ResetOriginForCorners(List<Vector2> corners)
+    private List<Vector2Int> ResetOriginForCorners(List<Vector2Int> corners)
     {
-        List<Vector2> newCorners = new List<Vector2>();
+        List<Vector2Int> newCorners = new List<Vector2Int>();
 
-        Vector2 leftBottom = corners[0];
-        foreach (Vector2 corner in corners)
+        Vector2Int leftBottom = corners[0];
+        foreach (Vector2Int corner in corners)
         {
             if (corner.IsMoreLeftBottomThan(leftBottom))
             {
@@ -610,17 +610,17 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        foreach (Vector2 corner in corners)
+        foreach (Vector2Int corner in corners)
         {
             newCorners.Add(corner - leftBottom);
         }
         return newCorners;
     }
 
-    private List<Vector2> CopyVectorList(List<Vector2> original)
+    private List<T> CopyVectorList<T>(List<T> original)
     {
-        List<Vector2> newList = new List<Vector2>();
-        foreach (Vector2 el in original)
+        List<T> newList = new List<T>();
+        foreach (T el in original)
         {
             newList.Add(el);
         }

@@ -7,9 +7,9 @@ using Random = UnityEngine.Random;
 public class Block : MonoBehaviour
 {
     [SerializeField] Shader shader = null;
-    [SerializeField] List<Vector2> corners = null;
+    [SerializeField] List<Vector2Int> corners = null;
     [SerializeField] Color blockColor;
-    public List<Vector2> Corners
+    public List<Vector2Int> Corners
     {
         get { return corners; }
     }
@@ -35,7 +35,7 @@ public class Block : MonoBehaviour
     // --- Variables that are used only for level generation --- ///
     #region 
     // TODO: Use another block class for these variables (use inheritance)
-    public Vector2 placeOnGrid;
+    public Vector2Int placeOnGrid;
 
     HashSet<Block> neighbours = null;
     public HashSet<Block> Neighbours { get { return neighbours; } }
@@ -70,7 +70,7 @@ public class Block : MonoBehaviour
         return polygonCollider.bounds;
     }
 
-    public void SetCorners(List<Vector2> corners)
+    public void SetCorners(List<Vector2Int> corners)
     {
         this.corners = corners;
     }
@@ -137,13 +137,13 @@ public class Block : MonoBehaviour
 
     public void MergeWith(Block merged)
     {
-        List<Vector2> newCorners = new List<Vector2>();
-        List<Vector2> primary = corners;
-        List<Vector2> secondary = merged.Corners;
+        List<Vector2Int> newCorners = new List<Vector2Int>();
+        List<Vector2Int> primary = corners;
+        List<Vector2Int> secondary = merged.Corners;
         int pInd = 0;
         int sInd = 0;
 
-        Vector2 offset = merged.placeOnGrid - placeOnGrid;
+        Vector2Int offset = merged.placeOnGrid - placeOnGrid;
         if (merged.placeOnGrid.IsMoreLeftBottomThan(placeOnGrid))
         {
             SwapVariables(ref primary, ref secondary);
@@ -157,9 +157,9 @@ public class Block : MonoBehaviour
             secondary[i] += offset;
         }
 
-        Vector2 startCorner = primary[0];
-        Vector2 lastDirection = Vector2.up;
-        Vector2 corner = primary[0];
+        Vector2Int startCorner = primary[0];
+        Vector2Int lastDirection = Vector2Int.up;
+        Vector2Int corner = primary[0];
         do
         {
             newCorners.Add(corner);
@@ -167,8 +167,8 @@ public class Block : MonoBehaviour
             if (secondary.Contains(corner))
             {
                 sInd = secondary.IndexOf(corner);
-                Vector2 pNewCorner = primary[(pInd + 1) % primary.Count];
-                Vector2 sNewCorner = secondary[(sInd + 1) % secondary.Count];
+                Vector2Int pNewCorner = primary[(pInd + 1) % primary.Count];
+                Vector2Int sNewCorner = secondary[(sInd + 1) % secondary.Count];
 
                 float pAngle = (pNewCorner - corner).ClockwiseAngle(-lastDirection);
                 float sAngle = (sNewCorner - corner).ClockwiseAngle(-lastDirection);
@@ -217,13 +217,13 @@ public class Block : MonoBehaviour
         return gridBounds.Contains(min) && gridBounds.Contains(max);
     }
 
-    public void GenerateSquareBlock(float size = 1f)
+    public void GenerateSquareBlock(int size = 1)
     {
-        corners = new List<Vector2>();
-        corners.Add(Vector2.zero);
-        corners.Add(new Vector2(0, size));
-        corners.Add(new Vector2(size, size));
-        corners.Add(new Vector2(size, 0));
+        corners = new List<Vector2Int>();
+        corners.Add(Vector2Int.zero);
+        corners.Add(new Vector2Int(0, size));
+        corners.Add(new Vector2Int(size, size));
+        corners.Add(new Vector2Int(size, 0));
     }
 
     public void GenerateShapeAndCollider()

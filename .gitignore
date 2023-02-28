@@ -1,6 +1,7 @@
 # ---------------- Added by the developer -------------------------
 blockGame_*/
 *.keystore
+*.meta
 
 # ---------------- Unity gitignore template gotten from -------------------------
 # Got latest from https://github.com/github/gitignore/blob/main/Unity.gitignore

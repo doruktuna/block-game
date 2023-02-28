@@ -7,7 +7,7 @@ public class Block
     public Vector2Int placeOnGrid;
     public Color blockColor;
 
-    List<Vector2Int> corners = null;
+    public List<Vector2Int> corners = null;
     public List<Vector2Int> Corners { get { return corners; } }
     public List<Vector2Int> CornersInGridSpace
     {
@@ -25,6 +25,12 @@ public class Block
     HashSet<Block> neighbours = null;
     public HashSet<Block> Neighbours { get { return neighbours; } }
 
+    public Block(Vector2Int placeOnGrid)
+    {
+        this.placeOnGrid = placeOnGrid;
+    }
+
+
     // --- Methods that are only used for level generation --- ///
     #region 
     public void AddNeighbour(Block candidate)
@@ -40,6 +46,15 @@ public class Block
         {
             candidate.AddNeighbour(this);
         }
+    }
+
+    public void GenerateSquareBlock(int size = 1)
+    {
+        corners = new List<Vector2Int>();
+        corners.Add(Vector2Int.zero);
+        corners.Add(new Vector2Int(0, size));
+        corners.Add(new Vector2Int(size, size));
+        corners.Add(new Vector2Int(size, 0));
     }
 
     private bool HasNeighbour(Block block)

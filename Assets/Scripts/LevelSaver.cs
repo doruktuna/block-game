@@ -43,11 +43,11 @@ public class LevelSaver : MonoBehaviour
         LevelSaveData data = new LevelSaveData();
 
         data.gridSize = levelGenerator.GridSize;
-        data.levelSeed = levelGenerator.LevelSeed;
-        data.numPieces = levelGenerator.Blocks.Count;
+        data.levelSeed = levelGenerator.Seed;
+        data.numPieces = levelGenerator.BlockObjects.Count;
 
         data.blocks = new List<BlockData>();
-        foreach (BlockObject block in levelGenerator.Blocks)
+        foreach (BlockObject block in levelGenerator.BlockObjects)
         {
             BlockData blockData = new BlockData();
             blockData.corners = GetCorners(block.Corners);

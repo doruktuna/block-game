@@ -46,5 +46,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minPieces: 12
   maxPieces: 12
-  blockPrefab: {fileID: 6052932306360851854, guid: 1b8be3145b676d037bb99b10f1f44c54, type: 3}
+  blockObjectPrefab: {fileID: 6052932306360851854, guid: 1b8be3145b676d037bb99b10f1f44c54, type: 3}
   triangleBreakProbability: 0.298
+  minFallSpeed: 5
+  maxFallSpeed: 10
+  stepTimeForDemo: 0.25
+  textDemo: {fileID: 0}
+  buttonPlayPauseButton: {fileID: 0}
+  buttonNextStep: {fileID: 0}
+  redDot: {fileID: 0}
+  redDot2: {fileID: 0}

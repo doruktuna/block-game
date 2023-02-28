@@ -47,7 +47,7 @@ public class LevelSaver : MonoBehaviour
         data.numPieces = levelGenerator.Blocks.Count;
 
         data.blocks = new List<BlockData>();
-        foreach (Block block in levelGenerator.Blocks)
+        foreach (BlockObject block in levelGenerator.Blocks)
         {
             BlockData blockData = new BlockData();
             blockData.corners = GetCorners(block.Corners);

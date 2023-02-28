@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GameController : MonoBehaviour
 {
-    Block selectedBlock = null;
+    BlockObject selectedBlock = null;
     GridPuzzle grid = null;
     Vector3 offset;
 
@@ -29,7 +29,7 @@ public class GameController : MonoBehaviour
             {
                 if (target.CompareTag(Util.Tags.block))
                 {
-                    selectedBlock = target.transform.GetComponent<Block>();
+                    selectedBlock = target.transform.GetComponent<BlockObject>();
                     offset = selectedBlock.transform.position - mousePosition;
                     minZForABlock -= 0.0001f;
                     UpdateBlockZ(selectedBlock, minZForABlock);
@@ -82,7 +82,7 @@ public class GameController : MonoBehaviour
         return val;
     }
 
-    private void UpdateBlockZ(Block selectedBlock, float minZForABlock)
+    private void UpdateBlockZ(BlockObject selectedBlock, float minZForABlock)
     {
         Vector3 newPos = selectedBlock.transform.position;
         newPos.z = minZForABlock;

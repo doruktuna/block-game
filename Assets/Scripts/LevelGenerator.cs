@@ -10,7 +10,7 @@ public class LevelGenerator : MonoBehaviour
 {
     [SerializeField] int minPieces;
     [SerializeField] int maxPieces;
-    [SerializeField] Block blockPrefab;
+    [SerializeField] BlockObject blockPrefab;
     [SerializeField][Range(0f, 1f)] float triangleBreakProbability;
 
     [SerializeField] float minFallSpeed = 5f;
@@ -36,12 +36,12 @@ public class LevelGenerator : MonoBehaviour
     GridPuzzle grid;
     LevelFinishedChecker levelFinishedChecker;
 
-    List<Block> blocks;
-    public List<Block> Blocks { get { return blocks; } }
+    List<BlockObject> blocks;
+    public List<BlockObject> Blocks { get { return blocks; } }
 
-    List<Block> oldBlocks;
+    List<BlockObject> oldBlocks;
 
-    Block maxSizeBlock;
+    BlockObject maxSizeBlock;
     float maxBlockSize;
 
     float blockFallingMinY;
@@ -157,7 +157,7 @@ public class LevelGenerator : MonoBehaviour
         gridSize = grid.GridBoardSize;
 
         oldBlocks = blocks;
-        blocks = new List<Block>();
+        blocks = new List<BlockObject>();
 
         print("Generating level");
         UpdateRandomSeed(seed);
@@ -182,8 +182,8 @@ public class LevelGenerator : MonoBehaviour
 
         while (blocks.Count > numPieces)
         {
-            Block block = SelectRandomBlockExcludingMax();
-            Block toBeMerged = SelectSmallestBlock(block.Neighbours);
+            BlockObject block = SelectRandomBlockExcludingMax();
+            BlockObject toBeMerged = SelectSmallestBlock(block.Neighbours);
             block.MergeWith(toBeMerged);
             if (demoMode)
             {
@@ -224,7 +224,7 @@ public class LevelGenerator : MonoBehaviour
         gridSize = grid.GridBoardSize;
 
         oldBlocks = blocks;
-        blocks = new List<Block>();
+        blocks = new List<BlockObject>();
 
         textDemo.text = "Welcome to level generation demo. You can use the buttons below buttons to proceed";
         yield return null;
@@ -258,8 +258,8 @@ public class LevelGenerator : MonoBehaviour
         EnableRedDots();
         while (blocks.Count > numPieces)
         {
-            Block block = SelectRandomBlockExcludingMax();
-            Block toBeMerged = SelectSmallestBlock(block.Neighbours);
+            BlockObject block = SelectRandomBlockExcludingMax();
+            BlockObject toBeMerged = SelectSmallestBlock(block.Neighbours);
             textDemo.text = String.Format("Block at {0} is going to merge with block at {1}", block.placeOnGrid, toBeMerged.placeOnGrid);
             UpdateRedDotPositions(block.transform.position, toBeMerged.transform.position);
             yield return null;
@@ -366,26 +366,26 @@ public class LevelGenerator : MonoBehaviour
     private void DeleteAllBlocks()
     {
         DeleteOldBlocks();
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             Destroy(block.gameObject);
         }
-        blocks = new List<Block>();
+        blocks = new List<BlockObject>();
     }
 
     private void DeleteOldBlocks()
     {
         if (oldBlocks != null)
         {
-            foreach (Block block in oldBlocks)
+            foreach (BlockObject block in oldBlocks)
             {
                 Destroy(block.gameObject);
             }
-            oldBlocks = new List<Block>();
+            oldBlocks = new List<BlockObject>();
         }
     }
 
-    private void UpdateMaxBlockIfBigger(Block block)
+    private void UpdateMaxBlockIfBigger(BlockObject block)
     {
         float blockSize = CalculateBlockSize(block);
         if (blockSize > maxBlockSize)
@@ -395,9 +395,9 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    private Block SelectRandomBlockExcludingMax()
+    private BlockObject SelectRandomBlockExcludingMax()
     {
-        Block block = null;
+        BlockObject block = null;
         do
         {
             int index = Random.Range(0, blocks.Count);
@@ -407,12 +407,12 @@ public class LevelGenerator : MonoBehaviour
         return block;
     }
 
-    private Block SelectSmallestBlock(HashSet<Block> candidates)
+    private BlockObject SelectSmallestBlock(HashSet<BlockObject> candidates)
     {
         float minSize = float.MaxValue;
-        Block minAreaBlock = null;
+        BlockObject minAreaBlock = null;
 
-        foreach (Block block in candidates)
+        foreach (BlockObject block in candidates)
         {
             float blockSize = CalculateBlockSize(block);
             if (blockSize < minSize)
@@ -425,7 +425,7 @@ public class LevelGenerator : MonoBehaviour
         return minAreaBlock;
     }
 
-    private float CalculateBlockSize(Block block)
+    private float CalculateBlockSize(BlockObject block)
     {
         return block.GetBounds().size.sqrMagnitude;
     }
@@ -452,7 +452,7 @@ public class LevelGenerator : MonoBehaviour
                 Vector2 position = grid.transform.position;
                 position += grid.GridStepSize * new Vector2(i, j);
 
-                Block newBlock = Instantiate(blockPrefab, position, Quaternion.identity, this.transform);
+                BlockObject newBlock = Instantiate(blockPrefab, position, Quaternion.identity, this.transform);
                 newBlock.BlockColor = GetRandomColor();
                 newBlock.GenerateSquareBlock();
                 newBlock.GenerateShapeAndCollider();
@@ -465,7 +465,7 @@ public class LevelGenerator : MonoBehaviour
 
     private void GiveRandomColorsToBlocks()
     {
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             block.BlockColor = GetRandomColor();
         }
@@ -474,7 +474,7 @@ public class LevelGenerator : MonoBehaviour
     private void AssignSelectedColorsToBlocks(List<Color> colors)
     {
         int ind = Random.Range(0, colors.Count - 1);
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             block.BlockColor = colors[ind];
             ind = (ind + 1) % colors.Count;
@@ -484,9 +484,9 @@ public class LevelGenerator : MonoBehaviour
     private void AssignNeighboursOfBlocks()
     {
         // TODO: Not efficient for checking neighbours, but not a big deal
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
-            foreach (Block neighbour in blocks)
+            foreach (BlockObject neighbour in blocks)
             {
                 if (block == neighbour) { continue; }
                 if (block.IsNeighbourTo(neighbour))
@@ -499,10 +499,10 @@ public class LevelGenerator : MonoBehaviour
 
     private void BreakSquaresIntoTriangles()
     {
-        List<Block> squaresToDestroy = new List<Block>();
-        List<Block> newTriangles = new List<Block>();
+        List<BlockObject> squaresToDestroy = new List<BlockObject>();
+        List<BlockObject> newTriangles = new List<BlockObject>();
 
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             if (block.Corners.Count != 4) { continue; }
             if (Random.Range(0f, 1f) > triangleBreakProbability) { continue; }
@@ -531,8 +531,8 @@ public class LevelGenerator : MonoBehaviour
                 pos2 = block.transform.position;
                 placeOnGrid2 = block.placeOnGrid;
             }
-            Block triangle1 = Instantiate(blockPrefab, pos1, Quaternion.identity, this.transform);
-            Block triangle2 = Instantiate(blockPrefab, pos2, Quaternion.identity, this.transform);
+            BlockObject triangle1 = Instantiate(blockPrefab, pos1, Quaternion.identity, this.transform);
+            BlockObject triangle2 = Instantiate(blockPrefab, pos2, Quaternion.identity, this.transform);
 
             triangle1.placeOnGrid = placeOnGrid1;
             triangle2.placeOnGrid = placeOnGrid2;
@@ -559,12 +559,12 @@ public class LevelGenerator : MonoBehaviour
             squaresToDestroy.Add(block);
         }
 
-        foreach (Block block in newTriangles)
+        foreach (BlockObject block in newTriangles)
         {
             blocks.Add(block);
         }
 
-        foreach (Block block in squaresToDestroy)
+        foreach (BlockObject block in squaresToDestroy)
         {
             EraseFromNeighboursList(block);
             RemoveAndDestroy(block);
@@ -572,10 +572,10 @@ public class LevelGenerator : MonoBehaviour
     }
 
     // TODO: Use generic type instead of Block
-    private Block SelectRandomFromSet(HashSet<Block> neighbours)
+    private BlockObject SelectRandomFromSet(HashSet<BlockObject> neighbours)
     {
         int ind = Random.Range(1, neighbours.Count);
-        foreach (Block block in neighbours)
+        foreach (BlockObject block in neighbours)
         {
             ind--;
             if (ind == 0) { return block; }
@@ -583,15 +583,15 @@ public class LevelGenerator : MonoBehaviour
         return null;
     }
 
-    private void EraseFromNeighboursList(Block removal)
+    private void EraseFromNeighboursList(BlockObject removal)
     {
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             block.RemoveNeighbour(removal);
         }
     }
 
-    private void RemoveAndDestroy(Block block)
+    private void RemoveAndDestroy(BlockObject block)
     {
         blocks.Remove(block);
         Destroy(block.gameObject);
@@ -641,7 +641,7 @@ public class LevelGenerator : MonoBehaviour
         Vector3 origin = grid.transform.position;
         float addRange = grid.GridUnitySize - grid.GridStepSize;
 
-        foreach (Block block in blocks)
+        foreach (BlockObject block in blocks)
         {
             float x = origin.x + Random.Range(0, addRange);
             float y = origin.y + Random.Range(0, addRange);

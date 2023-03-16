@@ -6,7 +6,18 @@ A simple block placing game developed as part of a job interview.
 - Levels are generated procedurally.
 - The goal platform is mobile devices but it works on computers too.
 
-## To-Do List (See Issues)
-1. Level generator uses unity tools. It should work without any dependence on Unity.
-1. Level generation demo is almost the same as level generation code. They should be merged and updated.
-1. Add some screenshots to readme file.
+Some screenshots:
+
+![Main Menu](./Screenshots/main_menu.png?raw=true)
+![Level Screenshot 1](./Screenshots/medium_1.png?raw=true "Optional Title")
+
+![Level Screenshot 2](./Screenshots/medium_2.png?raw=true "Optional Title")
+![Level Screenshot 3](./Screenshots/medium_3.png?raw=true "Optional Title")
+
+## To-Do List
+1. Put some music and sound effects.
+	* Add some options for muting them.
+2. Visual Improvements
+	+ Make block pieces slowly fly in the background.
+	+ Change the main menu button.
+	+ Change the main menu background to something more vivid.

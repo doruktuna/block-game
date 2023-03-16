@@ -1,81 +1,37 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
-public class Block : MonoBehaviour
+public class Block
 {
-    [SerializeField] Shader shader = null;
-    [SerializeField] List<Vector2> corners = null;
-    [SerializeField] Color blockColor;
-    public List<Vector2> Corners
-    {
-        get { return corners; }
-    }
+    public Vector2Int placeOnGrid;
+    public Color blockColor;
 
-    public Color BlockColor
-    {
-        set
-        {
-            blockColor = value;
-            GetComponent<MeshRenderer>().material.color = blockColor;
-        }
-        get { return blockColor; }
-    }
-
-    [HideInInspector] public bool isFullyInGrid;
-
-    PolygonCollider2D polygonCollider = null;
-
-    bool isFalling = false;
-    float fallSpeed;
-    float fallStopY;
-
-    // --- Variables that are used only for level generation --- ///
-    #region 
-    // TODO: Use another block class for these variables (use inheritance)
-    public Vector2 placeOnGrid;
-
-    HashSet<Block> neighbours = null;
-    public HashSet<Block> Neighbours { get { return neighbours; } }
-    public List<Vector2> CornersInWorldSpace
+    public List<Vector2Int> corners = null;
+    public List<Vector2Int> Corners { get { return corners; } }
+    public List<Vector2Int> CornersInGridSpace
     {
         get
         {
-            List<Vector2> cornersWorld = new List<Vector2>();
-            Vector2 origin = transform.position;
-            foreach (Vector2 unityCorner in polygonCollider.points)
+            List<Vector2Int> cornersGrid = new List<Vector2Int>();
+            foreach (Vector2Int corner in corners)
             {
-                cornersWorld.Add(origin + unityCorner);
+                cornersGrid.Add(placeOnGrid + corner);
             }
-            return cornersWorld;
+            return cornersGrid;
         }
     }
-    #endregion
 
-    void Start()
+    HashSet<Block> neighbours = null;
+    public HashSet<Block> Neighbours { get { return neighbours; } }
+
+    public Block(Vector2Int placeOnGrid)
     {
-        GetComponent<MeshRenderer>().material = new Material(shader);
-        GenerateShapeAndCollider();
+        this.placeOnGrid = placeOnGrid;
     }
 
-    void FixedUpdate()
-    {
-        ContinueFalling();
-    }
 
-    public Bounds GetBounds()
-    {
-        return polygonCollider.bounds;
-    }
-
-    public void SetCorners(List<Vector2> corners)
-    {
-        this.corners = corners;
-    }
-
-    // --- Variables that are used only for level generation --- ///
+    // --- Methods that are only used for level generation --- ///
     #region 
     public void AddNeighbour(Block candidate)
     {
@@ -92,6 +48,32 @@ public class Block : MonoBehaviour
         }
     }
 
+    public int EncapsulatingRectangleSize()
+    {
+        Vector2Int bottomLeft = new Vector2Int(corners[0].x, corners[0].y);
+        Vector2Int topRight = new Vector2Int(corners[0].x, corners[0].y);
+
+        foreach (Vector2Int corner in corners)
+        {
+            if (corner.x < bottomLeft.x) { bottomLeft.x = corner.x; }
+            if (corner.y < bottomLeft.y) { bottomLeft.y = corner.y; }
+            if (corner.x > topRight.x) { topRight.x = corner.x; }
+            if (corner.y > topRight.y) { topRight.y = corner.y; }
+        }
+
+        Vector2Int diff = topRight - bottomLeft;
+        return diff.x * diff.y;
+    }
+
+    public void GenerateSquareBlock(int size = 1)
+    {
+        corners = new List<Vector2Int>();
+        corners.Add(Vector2Int.zero);
+        corners.Add(new Vector2Int(0, size));
+        corners.Add(new Vector2Int(size, size));
+        corners.Add(new Vector2Int(size, 0));
+    }
+
     private bool HasNeighbour(Block block)
     {
         if (neighbours == null) { return false; }
@@ -101,9 +83,9 @@ public class Block : MonoBehaviour
     public bool IsNeighbourTo(Block neighbour)
     {
         int numIntersects = 0;
-        foreach (Vector2 corner in CornersInWorldSpace)
+        foreach (Vector2Int corner in CornersInGridSpace)
         {
-            foreach (Vector2 nbCorner in neighbour.CornersInWorldSpace)
+            foreach (Vector2Int nbCorner in neighbour.CornersInGridSpace)
             {
                 if (corner == nbCorner)
                 {
@@ -137,19 +119,18 @@ public class Block : MonoBehaviour
 
     public void MergeWith(Block merged)
     {
-        List<Vector2> newCorners = new List<Vector2>();
-        List<Vector2> primary = corners;
-        List<Vector2> secondary = merged.Corners;
+        List<Vector2Int> newCorners = new List<Vector2Int>();
+        List<Vector2Int> primary = corners;
+        List<Vector2Int> secondary = merged.Corners;
         int pInd = 0;
         int sInd = 0;
 
-        Vector2 offset = merged.placeOnGrid - placeOnGrid;
+        Vector2Int offset = merged.placeOnGrid - placeOnGrid;
         if (merged.placeOnGrid.IsMoreLeftBottomThan(placeOnGrid))
         {
             SwapVariables(ref primary, ref secondary);
             offset = -offset;
             placeOnGrid = merged.placeOnGrid;
-            transform.position = merged.transform.position;
         }
 
         for (int i = 0; i < secondary.Count; i++)
@@ -157,9 +138,9 @@ public class Block : MonoBehaviour
             secondary[i] += offset;
         }
 
-        Vector2 startCorner = primary[0];
-        Vector2 lastDirection = Vector2.up;
-        Vector2 corner = primary[0];
+        Vector2Int startCorner = primary[0];
+        Vector2Int lastDirection = Vector2Int.up;
+        Vector2Int corner = primary[0];
         do
         {
             newCorners.Add(corner);
@@ -167,8 +148,8 @@ public class Block : MonoBehaviour
             if (secondary.Contains(corner))
             {
                 sInd = secondary.IndexOf(corner);
-                Vector2 pNewCorner = primary[(pInd + 1) % primary.Count];
-                Vector2 sNewCorner = secondary[(sInd + 1) % secondary.Count];
+                Vector2Int pNewCorner = primary[(pInd + 1) % primary.Count];
+                Vector2Int sNewCorner = secondary[(sInd + 1) % secondary.Count];
 
                 float pAngle = (pNewCorner - corner).ClockwiseAngle(-lastDirection);
                 float sAngle = (sNewCorner - corner).ClockwiseAngle(-lastDirection);
@@ -188,7 +169,6 @@ public class Block : MonoBehaviour
         } while (corner != startCorner);
 
         corners = newCorners;
-        GenerateShapeAndCollider();
     }
 
     private void SwapVariables<T>(ref T primary, ref T secondary)
@@ -200,79 +180,5 @@ public class Block : MonoBehaviour
 
     #endregion
 
-    public bool IsOriginInGrid(Bounds gridBounds)
-    {
-        Vector3 checkPoint = transform.position;
-        checkPoint.z = gridBounds.center.z;
-        return gridBounds.Contains(checkPoint);
-    }
-
-    public bool IsFullyInGrid(Bounds gridBounds)
-    {
-        Bounds blockBounds = GetBounds();
-        Vector3 min = blockBounds.min;
-        Vector3 max = blockBounds.max;
-        min.z = gridBounds.center.z;
-        max.z = gridBounds.center.z;
-        return gridBounds.Contains(min) && gridBounds.Contains(max);
-    }
-
-    public void GenerateSquareBlock(float size = 1f)
-    {
-        corners = new List<Vector2>();
-        corners.Add(Vector2.zero);
-        corners.Add(new Vector2(0, size));
-        corners.Add(new Vector2(size, size));
-        corners.Add(new Vector2(size, 0));
-    }
-
-    public void GenerateShapeAndCollider()
-    {
-        GridPuzzle grid = FindObjectOfType<GridPuzzle>();
-        float stepSize = grid.GridStepSize;
-
-        Vector3 originalPosition = transform.position;
-        transform.position = Vector3.zero;
-
-        List<Vector2> gridCorners = new List<Vector2>();
-        foreach (Vector2 corner in corners)
-        {
-            gridCorners.Add(stepSize * corner);
-        }
-
-        if (polygonCollider != null)
-        {
-            Destroy(polygonCollider);
-        }
-
-        polygonCollider = gameObject.AddComponent<PolygonCollider2D>();
-        polygonCollider.SetPath(0, gridCorners);
-        GetComponent<MeshFilter>().mesh = polygonCollider.CreateMesh(false, false);
-        GetComponent<MeshRenderer>().material.color = blockColor;
-
-        transform.position = originalPosition;
-    }
-
-    public void StartFalling(float speed, float stopY)
-    {
-        isFalling = true;
-        fallSpeed = speed;
-        fallStopY = stopY;
-    }
-
-    public void StopFalling()
-    {
-        isFalling = false;
-    }
-
-    private void ContinueFalling()
-    {
-        if (!isFalling) { return; }
-        Vector3 newPos = transform.position;
-        newPos.y -= Time.deltaTime * fallSpeed;
-        transform.position = newPos;
-
-        if (newPos.y <= fallStopY) { StopFalling(); }
-    }
 
 }

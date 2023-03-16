@@ -26,6 +26,7 @@ public class MainMenuController : MonoBehaviour
 
     public void LevelGenerationClicked()
     {
+        LevelSettings.getInstance().InitDemoSettings();
         SceneManager.LoadScene(Util.SceneIndices.levelGenerationDemo);
     }
 

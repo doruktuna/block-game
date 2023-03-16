@@ -22,7 +22,7 @@ public class LevelSaver : MonoBehaviour
     struct BlockData
     {
         public Color color;
-        public List<SerializableVector2> corners;
+        public List<SerializableVector2Int> corners;
     }
 
     void Start()
@@ -43,11 +43,11 @@ public class LevelSaver : MonoBehaviour
         LevelSaveData data = new LevelSaveData();
 
         data.gridSize = levelGenerator.GridSize;
-        data.levelSeed = levelGenerator.LevelSeed;
-        data.numPieces = levelGenerator.Blocks.Count;
+        data.levelSeed = levelGenerator.Seed;
+        data.numPieces = levelGenerator.BlockObjects.Count;
 
         data.blocks = new List<BlockData>();
-        foreach (Block block in levelGenerator.Blocks)
+        foreach (BlockObject block in levelGenerator.BlockObjects)
         {
             BlockData blockData = new BlockData();
             blockData.corners = GetCorners(block.Corners);
@@ -67,12 +67,12 @@ public class LevelSaver : MonoBehaviour
         File.WriteAllText(fullPath, jsonString);
     }
 
-    private List<SerializableVector2> GetCorners(List<Vector2> corners)
+    private List<SerializableVector2Int> GetCorners(List<Vector2Int> corners)
     {
-        List<SerializableVector2> cornersSV2 = new List<SerializableVector2>();
-        foreach (Vector2 corner in corners)
+        List<SerializableVector2Int> cornersSV2 = new List<SerializableVector2Int>();
+        foreach (Vector2Int corner in corners)
         {
-            cornersSV2.Add(new SerializableVector2(corner));
+            cornersSV2.Add(new SerializableVector2Int(corner));
         }
         return cornersSV2;
     }

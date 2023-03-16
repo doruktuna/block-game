@@ -28,7 +28,7 @@ public class LevelFinishedChecker : MonoBehaviour
     {
         if (UIFinishedTexts.activeInHierarchy && Input.GetMouseButtonDown(0))
         {
-            levelGenerator.PresentPieces();
+            levelGenerator.GenerateLevel();
             UIFinishedTexts.SetActive(false);
         }
     }
@@ -41,13 +41,13 @@ public class LevelFinishedChecker : MonoBehaviour
         this.numPieces = numPieces;
     }
 
-    public void BlockPlaced(Block piece)
+    public void BlockPlaced(BlockObject piece)
     {
         // We have to wait for a physics update for bounds to get updated
         StartCoroutine(CheckBlockPlaceAfterFixedUpdate(piece));
     }
 
-    private IEnumerator CheckBlockPlaceAfterFixedUpdate(Block piece)
+    private IEnumerator CheckBlockPlaceAfterFixedUpdate(BlockObject piece)
     {
         yield return new WaitForFixedUpdate();
 
@@ -60,7 +60,7 @@ public class LevelFinishedChecker : MonoBehaviour
         piece.isFullyInGrid = isPlacedFullyInGrid;
     }
 
-    void BlockPlacedInGrid(Block piece)
+    void BlockPlacedInGrid(BlockObject piece)
     {
         if (!piece.isFullyInGrid)
         {
@@ -76,7 +76,6 @@ public class LevelFinishedChecker : MonoBehaviour
             {
                 print("Congrats mate, you have done it");
                 UIFinishedTexts.SetActive(true);
-                levelGenerator.Generate();
             }
             else
             {
@@ -85,7 +84,7 @@ public class LevelFinishedChecker : MonoBehaviour
         }
     }
 
-    void BlockPlacedOutOfGrid(Block piece)
+    void BlockPlacedOutOfGrid(BlockObject piece)
     {
         if (piece.isFullyInGrid)
         {

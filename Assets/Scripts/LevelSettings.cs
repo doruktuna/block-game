@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class LevelSettings : MonoBehaviour
@@ -23,6 +24,11 @@ public class LevelSettings : MonoBehaviour
     [SerializeField] int hardMinPieces = 10;
     [SerializeField] int hardMaxPieces = 11;
     [SerializeField][Range(0f, 1f)] float hardTriangleBreakProbability = .8f;
+
+    [SerializeField] int demoGridSize = 5;
+    [SerializeField] int demoMinPieces = 7;
+    [SerializeField] int demoMaxPieces = 8;
+    [SerializeField][Range(0f, 1f)] float demoTriangleBreakProbability = .6f;
 
     void Start()
     {
@@ -60,4 +66,11 @@ public class LevelSettings : MonoBehaviour
         triangleBreakProbability = hardTriangleBreakProbability;
     }
 
+    public void InitDemoSettings()
+    {
+        gridSize = demoGridSize;
+        minPieces = demoMinPieces;
+        maxPieces = demoMaxPieces;
+        triangleBreakProbability = demoTriangleBreakProbability;
+    }
 }
